@@ -6,10 +6,12 @@ import com.iconit.tech_be.domain.product.Product;
 import com.iconit.tech_be.domain.product.ProductService;
 import com.iconit.tech_be.infrastructure.dto.DefaultResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -26,39 +28,51 @@ public class ProductController {
     ResponseEntity<DefaultResponseEntity<ResponseProductDTO>> saveProduct(
             @Valid @RequestBody CreateProductDTO dto
     ) {
-        try {
-            Product product = dto.toProduct();
-            Product stored = this.productService.save(product);
-            return new ResponseEntity<>(
-                    new DefaultResponseEntity<>(ResponseProductDTO.from(stored)),
-                    HttpStatus.CREATED);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+
+        Product product = dto.toProduct();
+        Product stored = this.productService.save(product);
+        return new ResponseEntity<>(
+                new DefaultResponseEntity<>(ResponseProductDTO.from(stored)),
+                HttpStatus.CREATED);
+
     }
 
     @GetMapping
-    ResponseEntity<DefaultResponseEntity<List<ResponseProductDTO>>> getAllProducts() {
-        try {
-            List<Product> products = this.productService.findAll();
-            List<ResponseProductDTO> responseProductDTOS = products
-                    .stream()
-                    .map(ResponseProductDTO::from)
-                    .toList();
+    ResponseEntity<DefaultResponseEntity<List<ResponseProductDTO>>> getAllProducts(
+            @RequestParam(defaultValue = "0") int pageNo,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "asc") String direction
+    ) {
+        Sort sort = Sort.by(Sort.Direction.fromString(direction), "id");
+        Pageable pageable = PageRequest.of(pageNo, size, sort);
+        List<Product> products = this.productService.findAll(pageable);
+        List<ResponseProductDTO> responseProductDTOS = products
+                .stream()
+                .map(ResponseProductDTO::from)
+                .toList();
 
-            return ResponseEntity.ok(new DefaultResponseEntity<>(responseProductDTOS));
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+        return ResponseEntity.ok(new DefaultResponseEntity<>(responseProductDTOS));
+
     }
 
     @GetMapping("/{code}")
     ResponseEntity<DefaultResponseEntity<ResponseProductDTO>> getProductByCode(@PathVariable String code) {
-        try {
-            Product product = this.productService.findByCode(code);
-            return ResponseEntity.ok(new DefaultResponseEntity<>(ResponseProductDTO.from(product)));
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+        Product product = this.productService.findByCode(code);
+        return ResponseEntity.ok(new DefaultResponseEntity<>(ResponseProductDTO.from(product)));
     }
+
+    @PutMapping("/{code}")
+    ResponseEntity<?> updateProduct(
+            @PathVariable String code,
+            @Valid @RequestBody CreateProductDTO dto
+    ) {
+        return ResponseEntity.ok(new DefaultResponseEntity<>(this.productService.update(code, dto.toProduct())));
+    }
+
+    @DeleteMapping("/{code}")
+    ResponseEntity<?> deleteProduct(@PathVariable String code) {
+        this.productService.delete(code);
+        return ResponseEntity.noContent().build();
+    }
+
 }

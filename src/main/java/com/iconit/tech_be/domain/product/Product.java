@@ -23,6 +23,8 @@ public class Product {
     private Integer stockQuantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // used to implement soft delete
+    private boolean isAvailable = true;
 
     public Product() {
         this.createdAt = LocalDateTime.now();

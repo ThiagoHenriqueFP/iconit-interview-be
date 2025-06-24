@@ -2,6 +2,7 @@ package com.iconit.tech_be.domain.product;
 
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.AlreadyExistsException;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.NotPersistedEntityException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -44,6 +45,10 @@ public class ProductService {
         return this.productRepository.findAll();
     }
 
+    public List<Product> findAll(Pageable pageable) {
+        return this.productRepository.findAll(pageable).getContent();
+    }
+
     public void deleteById(Long id) {
         if (!alreadyExists(id))
             throw new NotPersistedEntityException(Product.class, id);
@@ -74,5 +79,12 @@ public class ProductService {
         }
 
         throw new NotPersistedEntityException(Product.class, code);
+    }
+
+    public void delete(String code) {
+        Product product = findByCode(code);
+
+        product.setAvailable(false);
+        this.productRepository.save(product);
     }
 }
