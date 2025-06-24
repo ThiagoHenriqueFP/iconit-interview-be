@@ -18,4 +18,7 @@ public class StockHistory {
     private Float sellValue;
     private LocalDateTime sellDate;
     private Integer sellQuantity;
+    private Float totalValue;
+    private boolean isCanceled = false;
+    private LocalDateTime updatedAt;
 }
