@@ -16,7 +16,6 @@ public class Product {
     @Column(nullable = false, unique = true)
     private String code;
     private String description;
-    @Column(nullable = false)
     private ProductType productType;
     @Column(nullable = false)
     private Float supplierPrice;
