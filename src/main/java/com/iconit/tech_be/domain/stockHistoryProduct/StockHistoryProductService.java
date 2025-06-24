@@ -13,42 +13,38 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
-public class StockHistoryProduct {
+public class StockHistoryProductService {
     private final ProductService productService;
     private final StockHistoryRepository stockHistoryRepository;
 
-    public StockHistoryProduct(ProductService productService, StockHistoryRepository stockHistoryRepository) {
+    public StockHistoryProductService(ProductService productService, StockHistoryRepository stockHistoryRepository) {
         this.productService = productService;
         this.stockHistoryRepository = stockHistoryRepository;
     }
 
     @Transactional
-    public boolean addProductToStock(String code, Integer stockAmount, Float sellValue) {
+    public StockHistory addProductToStock(String code, Integer stockAmount, Float supplierPrice) {
         Product product = productService.findByCode(code);
         product.setStockQuantity(product.getStockQuantity() + stockAmount);
+        product.setSupplierPrice(supplierPrice);
 
         StockHistory stockHistory = new StockHistory();
         stockHistory.setProduct(product);
         stockHistory.setMovement(Movement.IN);
-        stockHistory.setSellValue(sellValue);
+        stockHistory.setSellValue(0f);
 
         this.productService.update(code, product);
-        this.stockHistoryRepository.save(stockHistory);
-
-        return true;
+        return this.stockHistoryRepository.save(stockHistory);
     }
 
     @Transactional
-    public boolean addProductToStock(String code, Integer stockAmount) {
-        StockHistory history = this.stockHistoryRepository.findFirstByOrderByIdDesc().orElseThrow(
-                () -> new CouldNotAcquireStockHistoryException(code)
-        );
-        return this.addProductToStock(code, stockAmount, history.getSellValue());
-
+    public StockHistory addProductToStock(String code, Integer stockAmount) {
+        Product product = productService.findByCode(code);
+        return this.addProductToStock(code, stockAmount, product.getSupplierPrice());
     }
 
     @Transactional
-    public void removeProductsFromStock(String code, Integer amountToRemove, Float sellValue) {
+    public StockHistory removeProductsFromStock(String code, Integer amountToRemove, Float sellValue) {
         Product product = productService.findByCode(code);
         if (product.getStockQuantity() < amountToRemove)
             throw new IllegalArgumentException("Cannot remove more products that are not enough stock");
@@ -59,17 +55,25 @@ public class StockHistoryProduct {
         stockHistory.setSellDate(LocalDateTime.now());
         stockHistory.setProduct(product);
         stockHistory.setMovement(Movement.OUT);
+        stockHistory.setSellQuantity(amountToRemove);
         stockHistory.setSellValue(sellValue);
+        stockHistory.setTotalValue(sellValue * amountToRemove);
 
         this.productService.update(code, product);
-        this.stockHistoryRepository.save(stockHistory);
+        return this.stockHistoryRepository.save(stockHistory);
     }
 
-    public void updateStockHistory(Long id, StockHistory stockHistory) {
+    @Transactional
+    public void deleteStockHistory(Long id) {
         StockHistory history = this.stockHistoryRepository.findById(id).orElseThrow(
                 () -> new NotPersistedEntityException(StockHistory.class, id)
         );
+        history.setCanceled(true);
+        history.setUpdatedAt(LocalDateTime.now());
+        Product product = history.getProduct();
+        product.setStockQuantity(product.getStockQuantity() + history.getSellQuantity());
 
-
+        this.productService.update(product.getCode(), product);
+        this.stockHistoryRepository.save(history);
     }
 }
