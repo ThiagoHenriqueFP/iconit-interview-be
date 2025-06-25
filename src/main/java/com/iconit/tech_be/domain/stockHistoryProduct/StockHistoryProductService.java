@@ -32,6 +32,7 @@ public class StockHistoryProductService {
         stockHistory.setProduct(product);
         stockHistory.setMovement(Movement.IN);
         stockHistory.setSellValue(0f);
+        stockHistory.setSellDate(LocalDateTime.now());
 
         this.productService.update(code, product);
         return this.stockHistoryRepository.save(stockHistory);

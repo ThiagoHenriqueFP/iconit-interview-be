@@ -1,5 +1,6 @@
 package com.iconit.tech_be.domain.stockHistory;
 
+import com.iconit.tech_be.domain.enums.ProductType;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.NotPersistedEntityException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,11 @@ public class StockHistoryService {
 
     public List<StockHistory> findByInactives(Pageable pageable) {
         return this.stockHistoryRepository.findAllInactive(pageable);
+    }
+
+    public List<StockHistory> findByActivesByProductType(Pageable pageable, Integer type) {
+        ProductType productType = ProductType.values()[type];
+        return this.stockHistoryRepository.findByStockHistoriesByProductType(pageable, productType);
     }
 
     public StockHistory findById(Long id) {

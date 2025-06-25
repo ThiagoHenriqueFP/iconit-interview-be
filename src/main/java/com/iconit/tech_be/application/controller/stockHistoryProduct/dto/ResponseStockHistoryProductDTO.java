@@ -9,7 +9,7 @@ public record ResponseStockHistoryProductDTO(
         Long id,
         Movement movement,
         Float sellValue,
-        LocalDateTime sellDate,
+        String sellDate,
         Integer sellQuantity,
         Float totalValue,
         String productCode
@@ -19,7 +19,7 @@ public record ResponseStockHistoryProductDTO(
                 stockHistory.getId(),
                 stockHistory.getMovement(),
                 stockHistory.getSellValue(),
-                stockHistory.getSellDate(),
+                stockHistory.getSellDate().toString(),
                 stockHistory.getSellQuantity(),
                 stockHistory.getTotalValue(),
                 stockHistory.getProduct().getCode()
