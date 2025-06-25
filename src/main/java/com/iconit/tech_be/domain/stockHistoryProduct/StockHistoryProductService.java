@@ -5,7 +5,6 @@ import com.iconit.tech_be.domain.product.Product;
 import com.iconit.tech_be.domain.product.ProductService;
 import com.iconit.tech_be.domain.stockHistory.StockHistory;
 import com.iconit.tech_be.domain.stockHistory.StockHistoryRepository;
-import com.iconit.tech_be.infrastructure.exceptions.customExceptions.CouldNotAcquireStockHistoryException;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.NotPersistedEntityException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,7 @@ public class StockHistoryProductService {
 
     @Transactional
     public StockHistory addProductToStock(String code, Integer stockAmount, Float supplierPrice) {
-        Product product = productService.findByCode(code);
+        Product product = productService.findEntityByCode(code);
         product.setStockQuantity(product.getStockQuantity() + stockAmount);
         product.setSupplierPrice(supplierPrice);
 
@@ -40,13 +39,13 @@ public class StockHistoryProductService {
 
     @Transactional
     public StockHistory addProductToStock(String code, Integer stockAmount) {
-        Product product = productService.findByCode(code);
+        Product product = productService.findEntityByCode(code);
         return this.addProductToStock(code, stockAmount, product.getSupplierPrice());
     }
 
     @Transactional
     public StockHistory removeProductsFromStock(String code, Integer amountToRemove, Float sellValue) {
-        Product product = productService.findByCode(code);
+        Product product = productService.findEntityByCode(code);
         if (product.getStockQuantity() < amountToRemove)
             throw new IllegalArgumentException("Cannot remove more products that are not enough stock");
 

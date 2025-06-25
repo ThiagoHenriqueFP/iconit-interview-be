@@ -1,19 +1,24 @@
 package com.iconit.tech_be.domain.product;
 
+import com.iconit.tech_be.application.controller.product.dto.ResponseProductDTO;
+import com.iconit.tech_be.domain.stockHistory.StockHistoryService;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.AlreadyExistsException;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.NotPersistedEntityException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
+    private final StockHistoryService stockHistoryService;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, StockHistoryService stockHistoryService) {
         this.productRepository = productRepository;
+        this.stockHistoryService = stockHistoryService;
     }
 
     private boolean alreadyExists(Long productId) {
@@ -29,7 +34,16 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Product findByCode(String code) throws NotPersistedEntityException {
+    public ResponseProductDTO findByCode(String code) throws NotPersistedEntityException {
+        Product product = this.productRepository.findProductByCode(code).orElseThrow(
+                () -> new NotPersistedEntityException(Product.class, code)
+        );
+
+        List<Number> stat = this.stockHistoryService.productSoldStats(code);
+        return ResponseProductDTO.from(product, (Integer) stat.get(0), (Float) stat.get(1));
+    }
+
+    public Product findEntityByCode(String code) throws NotPersistedEntityException {
         return this.productRepository.findProductByCode(code).orElseThrow(
                 () -> new NotPersistedEntityException(Product.class, code)
         );
@@ -45,8 +59,16 @@ public class ProductService {
         return this.productRepository.findAll();
     }
 
-    public List<Product> findAll(Pageable pageable) {
-        return this.productRepository.findAll(pageable).getContent();
+    public List<ResponseProductDTO> findAll(Pageable pageable) {
+        List<Product> products = this.productRepository.findAll(pageable).getContent();
+        List<ResponseProductDTO> dto = new ArrayList<>();
+
+        products.forEach(product -> {
+            List<Number> stat = this.stockHistoryService.productSoldStats(product.getCode());
+            dto.add(ResponseProductDTO.from(product, (Integer) stat.get(0), (Float) stat.get(1)));
+        });
+
+        return dto;
     }
 
     public void deleteById(Long id) {
@@ -82,7 +104,7 @@ public class ProductService {
     }
 
     public void delete(String code) {
-        Product product = findByCode(code);
+        Product product = findEntityByCode(code);
 
         product.setAvailable(false);
         this.productRepository.save(product);

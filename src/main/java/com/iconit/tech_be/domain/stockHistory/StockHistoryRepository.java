@@ -21,4 +21,6 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
     @Query("SELECT sh FROM stock_history sh where sh.product.productType = :type and sh.isCanceled = false order by sh.sellDate DESC")
     List<StockHistory> findByStockHistoriesByProductType(Pageable pageable, @Param("type") ProductType type);
 
-}
+    @Query("SELECT sh FROM stock_history sh where sh.product.code = :code and sh.isCanceled = false order by sh.sellDate DESC")
+    List<StockHistory> findAllByCode(@Param("code") String code);
+ }

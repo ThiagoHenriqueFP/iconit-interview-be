@@ -4,6 +4,7 @@ import com.iconit.tech_be.application.controller.product.dto.CreateProductDTO;
 import com.iconit.tech_be.application.controller.product.dto.ResponseProductDTO;
 import com.iconit.tech_be.domain.product.Product;
 import com.iconit.tech_be.domain.product.ProductService;
+import com.iconit.tech_be.domain.stockHistory.StockHistoryService;
 import com.iconit.tech_be.infrastructure.dto.DefaultResponseEntity;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +33,7 @@ public class ProductController {
         Product product = dto.toProduct();
         Product stored = this.productService.save(product);
         return new ResponseEntity<>(
-                new DefaultResponseEntity<>(ResponseProductDTO.from(stored)),
+                new DefaultResponseEntity<>(ResponseProductDTO.from(stored, 0, 0f)),
                 HttpStatus.CREATED);
 
     }
@@ -45,20 +46,16 @@ public class ProductController {
     ) {
         Sort sort = Sort.by(Sort.Direction.fromString(direction), "id");
         Pageable pageable = PageRequest.of(pageNo, size, sort);
-        List<Product> products = this.productService.findAll(pageable);
-        List<ResponseProductDTO> responseProductDTOS = products
-                .stream()
-                .map(ResponseProductDTO::from)
-                .toList();
+        List<ResponseProductDTO> products = this.productService.findAll(pageable);
 
-        return ResponseEntity.ok(new DefaultResponseEntity<>(responseProductDTOS));
+        return ResponseEntity.ok(new DefaultResponseEntity<>(products));
 
     }
 
     @GetMapping("/{code}")
     ResponseEntity<DefaultResponseEntity<ResponseProductDTO>> getProductByCode(@PathVariable String code) {
-        Product product = this.productService.findByCode(code);
-        return ResponseEntity.ok(new DefaultResponseEntity<>(ResponseProductDTO.from(product)));
+        ResponseProductDTO product = this.productService.findByCode(code);
+        return ResponseEntity.ok(new DefaultResponseEntity<>(product));
     }
 
     @PutMapping("/{code}")

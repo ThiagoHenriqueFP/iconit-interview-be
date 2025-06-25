@@ -1,5 +1,6 @@
 package com.iconit.tech_be.domain.stockHistory;
 
+import com.iconit.tech_be.domain.enums.Movement;
 import com.iconit.tech_be.domain.enums.ProductType;
 import com.iconit.tech_be.infrastructure.exceptions.customExceptions.NotPersistedEntityException;
 import org.springframework.data.domain.Pageable;
@@ -16,8 +17,8 @@ public class StockHistoryService {
         this.stockHistoryRepository = stockHistoryRepository;
     }
 
-    public List<StockHistory> findAll() {
-        return this.stockHistoryRepository.findAll();
+    public List<StockHistory> findAllByCode(String code) {
+        return this.stockHistoryRepository.findAllByCode(code);
     }
 
     public List<StockHistory> findByActives(Pageable pageable) {
@@ -50,5 +51,16 @@ public class StockHistoryService {
         history.setUpdatedAt(LocalDateTime.now());
 
         return this.stockHistoryRepository.save(history);
+    }
+
+    public List<Number> productSoldStats(String code) {
+        List<StockHistory> stockByCode = this.findAllByCode(code);
+        StockHistory initial = new StockHistory();
+        initial.setSellQuantity(0);
+        initial.setTotalValue(0f);
+        Integer totalSoldQuantity = stockByCode.stream().map(StockHistory::getSellQuantity).reduce(0, Integer::sum);
+        Float totalSoldValue = stockByCode.stream().map(StockHistory::getTotalValue).reduce(0f, Float::sum);
+
+        return List.of(totalSoldQuantity, totalSoldValue);
     }
 }
